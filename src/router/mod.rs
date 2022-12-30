@@ -45,7 +45,7 @@ impl Router {
             .add(path, handler)
     }
 
-    // This is where we actually match HTTP requests and routes to handlers
+    // This is where we match HTTP requests and routes to handlers and params
     pub fn route(&self, path: &str, method: &Method) -> RouterMatch<'_> {
         if let Some(Match { handler, params }) = self
             .method_map

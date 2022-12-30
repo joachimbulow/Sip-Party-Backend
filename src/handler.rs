@@ -29,6 +29,7 @@ pub async fn send_handler(mut ctx: Context) -> Response {
                 .unwrap()
         }
     };
+    println!("body is {}", body.name);
 
     Response::new(
         format!(
@@ -44,5 +45,6 @@ pub async fn param_handler(ctx: Context) -> String {
         Some(v) => v,
         None => "empty",
     };
+    println!("params is {}", param);
     format!("param called, param was: {}", param)
 }

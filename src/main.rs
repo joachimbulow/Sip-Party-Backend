@@ -16,14 +16,17 @@ pub mod routes;
 
 #[tokio::main]
 async fn main() {
+    // Init state here in future
     let some_state = "state".to_string();
 
+    // TODO: Extract these into files along with handlers (in controllers)
     let mut router: Router = Router::new();
     router.get("/test", Box::new(handler::test_handler));
     router.post("/send", Box::new(handler::send_handler));
     router.get("/params/:some_param", Box::new(handler::param_handler));
 
     let shared_router = Arc::new(router);
+
     let new_service = make_service_fn(move |_| {
         let app_state = AppState {
             state_thing: some_state.clone(),
