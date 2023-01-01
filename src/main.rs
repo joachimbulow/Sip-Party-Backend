@@ -1,6 +1,7 @@
-use std::sync::Arc;
-
+use std::{env, sync::Arc};
+use redis::Commands;
 use bytes::Bytes;
+use dotenv::dotenv;
 use hyper::{
     body::to_bytes,
     service::{make_service_fn, service_fn},
@@ -8,28 +9,49 @@ use hyper::{
 };
 use route_recognizer::Params;
 
-use crate::router::Router;
+use crate::{controllers::lobby_controller::init_lobby_routes, router::Router};
 
+pub mod controllers;
 pub mod handler;
 pub mod router;
 pub mod routes;
 
+
 #[tokio::main]
 async fn main() {
-    // Init state here in future
-    let some_state = "state".to_string();
+    //Environment variables from .env
+    dotenv().ok();
 
-    // TODO: Extract these into files along with handlers (in controllers)
+    // Redis connection
+    //format - host:port
+    let redis_host_name =
+        env::var("REDIS_HOSTNAME").expect("missing environment variable REDIS_HOSTNAME");
+
+    let redis_password = env::var("REDIS_PASSWORD").unwrap_or_default();
+    //if Redis server needs secure connection
+    let uri_scheme = match env::var("IS_TLS") {
+        Ok(_) => "rediss",
+        Err(_) => "redis",
+    };
+    let redis_conn_url = format!("{}://:{}@{}", uri_scheme, redis_password, redis_host_name);
+    let mut redis_client = redis::Client::open(redis_conn_url)
+        .expect("Invalid connection URL");
+
+
     let mut router: Router = Router::new();
-    router.get("/test", Box::new(handler::test_handler));
-    router.post("/send", Box::new(handler::send_handler));
-    router.get("/params/:some_param", Box::new(handler::param_handler));
+
+    // Init routes --------
+    init_lobby_routes(&mut router);
+
+    // -------------------
 
     let shared_router = Arc::new(router);
 
+    // App state and making route service function
     let new_service = make_service_fn(move |_| {
         let app_state = AppState {
-            state_thing: some_state.clone(),
+            redis_client: redis_client.clone(),
+            test_string: String::from("THis is a test"),
         };
 
         let router_capture = shared_router.clone();
@@ -39,6 +61,7 @@ async fn main() {
             }))
         }
     });
+
 
     let addr = "0.0.0.0:8080".parse().expect("address creation works");
     let server = Server::bind(&addr).serve(new_service);
@@ -69,8 +92,10 @@ pub type Error = Box<dyn std::error::Error + Send + Sync + 'static>;
 // that can be initted at boot time
 #[derive(Clone, Debug)]
 pub struct AppState {
-    pub state_thing: String,
+    redis_client: redis::Client,
+    test_string: String,
 }
+
 
 #[derive(Debug)]
 pub struct Context {
@@ -90,6 +115,7 @@ impl Context {
         }
     }
 
+    // To take the body of a request and give it in json format
     pub async fn body_json<T: serde::de::DeserializeOwned>(&mut self) -> Result<T, Error> {
         let body_bytes = match self.body_bytes {
             Some(ref v) => v,

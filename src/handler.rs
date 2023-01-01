@@ -9,7 +9,7 @@ struct SendRequest {
 }
 
 pub async fn test_handler(ctx: Context) -> String {
-    format!("test called, state_thing was: {}", ctx.state.state_thing)
+    format!("test called, state_thing was: {}", ctx.state.test_string)
 }
 
 pub async fn not_found_handler(_cx: Context) -> Response {
