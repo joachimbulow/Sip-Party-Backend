@@ -1,5 +1,4 @@
 use std::{env, sync::Arc};
-use redis::Commands;
 use bytes::Bytes;
 use dotenv::dotenv;
 use hyper::{
@@ -15,6 +14,7 @@ pub mod controllers;
 pub mod handler;
 pub mod router;
 pub mod routes;
+pub mod utils;
 
 
 #[tokio::main]
@@ -51,7 +51,7 @@ async fn main() {
     let new_service = make_service_fn(move |_| {
         let app_state = AppState {
             redis_client: redis_client.clone(),
-            test_string: String::from("THis is a test"),
+            test_string: String::from("This is a test"),
         };
 
         let router_capture = shared_router.clone();
