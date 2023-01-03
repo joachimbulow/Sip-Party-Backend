@@ -16,6 +16,10 @@ impl Game {
     pub fn new(code: String, host: Player) -> Game {
         Game { code: code, rounds: Vec::new(), players: Vec::new(), host: host }
     }
+
+    pub fn add_player(&self, player: Player) {
+        self.players.push(player);
+    }
 }
 
 #[derive(Serialize, Deserialize)]
